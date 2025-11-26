@@ -1,113 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Binary Upload</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f0f4f8;
-            color: #1a1a1a;
-        }
-        .form-container {
-            max-width: 420px;
-            margin: auto;
-            background-color: #ffffff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            color: #0d47a1;
-            text-align: center;
-        }
-        label {
-            font-weight: bold;
-            color: #0d47a1;
-        }
-        input[type="file"], select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #90caf9;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #1565c0;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0d47a1;
-        }
-        .popup {
-            display: none;
-            background-color: #2196f3;
-            color: white;
-            padding: 15px;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-    </style>
-</head>
-<body>
-    <div class="form-container">
-        <h2>Upload Binary File</h2>
-        <form id="uploadForm" enctype="multipart/form-data">
-            <label for="file">Select binary file:</label><br>
-            <input type="file" id="file" name="file" required><br><br>
+<script>
+    const fileInput = document.getElementById('file');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const form = document.getElementById('uploadForm');
+    const popup = document.getElementById('popup');
+    const tableBody = document.querySelector('.file-list-container tbody');
 
-            <label for="environment">Environment:</label><br>
-            <select id="environment" name="environment">
-                <option value="dev">dev</option>
-                <option value="prod">prod</option>
-            </select><br><br>
+    // Mostrar nombre del archivo seleccionado
+    if(fileInput) {
+        fileInput.addEventListener('change', () => {
+            const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+            fileNameDisplay.textContent = fileName ? `Selected file: ${fileName}` : '';
+        });
+    }
 
-            <button type="submit">UPLOAD</button>
-        </form>
-    </div>
-
-    <div id="popup" class="popup">File Successfully Uploaded</div>
-
-    <script>
-        const form = document.getElementById('uploadForm');
-        const popup = document.getElementById('popup');
-
+    // Manejo del envío del formulario
+    if(form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const formData = new FormData(form);
 
             try {
-                const response = await fetch('/upload', {
+                // Paso 1: subir archivo
+                const uploadResponse = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    popup.textContent = "File Successfully Uploaded";
-                    popup.style.display = 'block';
-                    setTimeout(() => popup.style.display = 'none', 3000);
-                } else {
+                if (!uploadResponse.ok) {
                     alert("Upload failed.");
+                    return;
                 }
+
+                const file = await uploadResponse.json();
+
+                // Paso 2: firmar (el backend decide si aplica)
+                const signResponse = await fetch('/sign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_id: file.id })
+                });
+
+                if (!signResponse.ok) {
+                    alert("Signing failed.");
+                    return;
+                }
+
+                const signed = await signResponse.json();
+
+                // Mostrar popup
+                popup.textContent = signed.status === "signed"
+                    ? "File successfully uploaded and signed"
+                    : "File uploaded. Awaiting approval for production";
+
+                popup.style.display = 'block';
+                setTimeout(() => popup.style.display = 'none', 3000);
+
+                // Agregar fila a la tabla
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${signed.id}</td>
+                    <td>${signed.filename}</td>
+                    <td class="environment env-${signed.environment}">${signed.environment}</td>
+                    <td><span class="status ${signed.status}">${signed.status}</span></td>
+                    <td>${signed.uploaded_at || '—'}</td>
+                    <td>${signed.signed_path ? `<a href="${signed.signed_path}" class="download-link">Download</a>` : '—'}</td>
+                    <td>${signed.signature || '—'}</td>
+                `;
+
+                if (tableBody) {
+                    tableBody.appendChild(newRow);
+                }
+
+                form.reset();
+                fileNameDisplay.textContent = '';
+
             } catch (error) {
-                console.error("Error uploading file:", error);
-                alert("Error uploading file.");
+                console.error("Error in upload/sign flow:", error);
+                alert("Error during upload/sign process.");
             }
         });
-    </script>
-</body>
-</html>
+    }
+</script>
