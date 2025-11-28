@@ -1,0 +1,32 @@
+[
+    {
+        "id": "b3dbb032-f965-4ed1-9de6-742b6af2571d",
+        "filename": "data/binaries\\b3dbb032-f965-4ed1-9de6-742b6af2571d20251128173436.bin",
+        "environment": "prod",
+        "status": "signed",
+        "uploaded_at": "2025-11-28T17:34:36.958449",
+        "signed_path": "c:\\Users\\HP\\Downloads\\ProyectoFinal_Entrega\\ProyectoFinal_Entrega\\data\\signed\\signed_b3dbb032-f965-4ed1-9de6-742b6af2571d20251128173436.bin",
+        "signature": "5d8ed3b21f8ea154202f64412cbc558ab1cdc9ceab23546c21d5ddcd695b2611",
+        "timestamp": "2025-11-28T17:34:36.959057"
+    },
+    {
+        "id": "b1fb27f2-b85e-4be2-b180-4a65f0c75279",
+        "filename": "data/binaries\\b1fb27f2-b85e-4be2-b180-4a65f0c7527920251128174633.bin",
+        "environment": "dev",
+        "status": "signed",
+        "uploaded_at": "2025-11-28T17:46:33.240480",
+        "signed_path": "c:\\Users\\HP\\Downloads\\ProyectoFinal_Entrega\\ProyectoFinal_Entrega\\data\\signed\\signed_b1fb27f2-b85e-4be2-b180-4a65f0c7527920251128174633.bin",
+        "signature": "5d8ed3b21f8ea154202f64412cbc558ab1cdc9ceab23546c21d5ddcd695b2611",
+        "timestamp": "2025-11-28T17:46:33.241211"
+    },
+    {
+        "id": "c9871e59-8958-4f16-aaef-d2a6eb2f85f8",
+        "filename": "data/binaries\\c9871e59-8958-4f16-aaef-d2a6eb2f85f820251128174657.bin",
+        "environment": "prod",
+        "status": "signed",
+        "uploaded_at": "2025-11-28T17:46:57.143517",
+        "signed_path": "c:\\Users\\HP\\Downloads\\ProyectoFinal_Entrega\\ProyectoFinal_Entrega\\data\\signed\\signed_c9871e59-8958-4f16-aaef-d2a6eb2f85f820251128174657.bin",
+        "signature": "5d8ed3b21f8ea154202f64412cbc558ab1cdc9ceab23546c21d5ddcd695b2611",
+        "timestamp": "2025-11-28T17:46:57.144424"
+    }
+]

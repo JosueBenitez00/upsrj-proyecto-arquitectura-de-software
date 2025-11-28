@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Firma de Binarios</title>
+    <style>
+        /* --- TEMA MODIFICADO (Azules y Blancos — sin tocar :root) --- */
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: #e8f1ff;              /* Fondo azul claro */
+            color: #0a1a2f;                   /* Azul oscuro para texto */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #0a1a2f;                    /* Azul oscuro */
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .upload-wrapper {
+            background: #ffffff;               /* Contenedor blanco */
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 50, 120, 0.15);
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 2rem;
+            border: 1px solid #bcd3ff;         /* Borde azul claro */
+        }
+
+        .form-group { margin-bottom: 1.5rem; }
+
+        label {
+            color: #3b5a7a;                    /* Azul gris */
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input[type="file"] {
+            color: #0a1a2f;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #dce8ff;               /* Azul muy claro */
+            border: 1px solid #88aaf6;         /* Azul medio */
+            border-radius: 8px;
+            color: #0a1a2f;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #1976d2;               /* Azul */
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #0d47a1;               /* Azul más oscuro */
+        }
+
+        /* --- TABLA --- */
+        .table-container {
+            width: 100%;
+            max-width: 1000px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden; 
+            box-shadow: 0 10px 25px rgba(0, 50, 120, 0.15);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #bcd3ff;      /* Azul claro */
+        }
+
+        th {
+            background-color: #e2edff;            /* Azul claro */
+            color: #1976d2;                       /* Azul */
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        td {
+            color: #0a1a2f;                        /* Azul oscuro */
+            font-size: 0.9rem;
+        }
+
+        a.download-link {
+            color: #1976d2;                       /* Azul */
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a.download-link:hover { text-decoration: underline; }
+
+        /* --- ETIQUETAS DE ESTADO --- */
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status.signed {
+            background-color: rgba(0, 122, 255, 0.15);  /* Azul tenue */
+            color: #0056b3;                             /* Azul fuerte */
+            border: 1px solid #0056b3;
+        }
+
+        .status.pending {
+            background-color: rgba(255, 255, 0, 0.15);  /* Amarillo suave */
+            color: #aa8b00;
+            border: 1px solid #aa8b00;
+        }
+
+        .environment { font-weight: bold; }
+        .env-prod { color: #1976d2; }
+        .env-dev { color: #4da6ff; }
+
+        /* --- POPUP --- */
+        #popup {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #1976d2;          /* Azul */
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: 500;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); }
+            to { transform: translateX(0); }
+        }
+
+        small { color: #3b5a7a; }
+
+</style>
+</head>
+<body>
+
+    <h1>Sistema de Firma Digital</h1>
+
+    <div class="upload-wrapper">
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="file">Seleccionar Archivo:</label>
+                <input type="file" id="file" name="file" required>
+                <small id="fileNameDisplay"></small>
+            </div>
+            
+            <div class="form-group">
+                <label for="environment">Entorno de Destino:</label>
+                <select id="environment" name="environment">
+                    <option value="dev">Desarrollo (Firma Automática)</option>
+                    <option value="prod">Producción (Requiere Aprobación)</option>
+                </select>
+            </div>
+            
+            <button type="submit">Subir y Procesar</button>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <table class="file-list-container">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Archivo</th>
+                    <th>Entorno</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                    <th>Firma (Hash)</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <div id="popup"></div>
+
+    <script>
+        const fileInput = document.getElementById('file');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const form = document.getElementById('uploadForm');
+        const popup = document.getElementById('popup');
+        const tableBody = document.querySelector('.file-list-container tbody');
+
+        // --- Cargar historial al iniciar ---
+        document.addEventListener('DOMContentLoaded', loadFiles);
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('/files');
+                if (response.ok) {
+                    const files = await response.json();
+                    tableBody.innerHTML = ''; 
+                    // Mostramos los más recientes primero
+                    files.reverse().forEach(file => addRowToTable(file));
+                }
+            } catch (error) {
+                console.error("Error cargando historial:", error);
+            }
+        }
+
+        function addRowToTable(file) {
+            const newRow = document.createElement('tr');
+            
+            // Formateo visual
+            const shortId = file.id ? file.id.substring(0, 8) + '...' : '???';
+            const shortSig = file.signature ? file.signature.substring(0, 10) + '...' : '—';
+            
+            // Manejo de fecha
+            let dateStr = file.uploaded_at || file.uploaded_date || '—';
+            if(dateStr.includes('T')) dateStr = dateStr.split('T')[0];
+
+            // Link de descarga
+            let actionHtml = '—';
+            if (file.signed_path) {
+                actionHtml = `<a href="#" class="download-link" onclick="alert('Archivo guardado en: ${file.signed_path}')">Ver Ruta</a>`;
+            }
+
+            newRow.innerHTML = `
+                <td style="font-family:monospace; color: var(--text-secondary);">${shortId}</td>
+                <td>${file.filename}</td>
+                <td class="environment env-${file.environment}">${file.environment}</td>
+                <td><span class="status ${file.status}">${file.status}</span></td>
+                <td>${dateStr}</td>
+                <td>${actionHtml}</td>
+                <td style="font-family: monospace; font-size: 0.85em; color: var(--text-secondary);">${shortSig}</td>
+            `;
+            
+            tableBody.appendChild(newRow);
+        }
+
+        // --- Interacción del Formulario ---
+        fileInput.addEventListener('change', () => {
+            const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+            fileNameDisplay.textContent = fileName ? `Archivo seleccionado: ${fileName}` : '';
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button');
+            const envSelect = document.getElementById('environment');
+            const isProd = envSelect.value === 'prod';
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Procesando...";
+
+            try {
+                // 1. Subir archivo
+                const uploadResponse = await fetch('/upload', { method: 'POST', body: formData });
+                if (!uploadResponse.ok) throw new Error("Falló la subida");
+                const file = await uploadResponse.json();
+
+                let signed = file; // Por defecto usamos el resultado de la subida
+
+                // 2. Firmar SOLO si NO es Producción (Dev)
+                if (!isProd) {
+                    const signResponse = await fetch('/sign', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ file_id: file.id })
+                    });
+                    if (!signResponse.ok) throw new Error("Falló la firma");
+                    signed = await signResponse.json();
+                }
+
+                // 3. Notificar
+                const isSigned = signed.status === "signed";
+                popup.style.backgroundColor = isSigned ? "var(--color-success)" : "var(--color-warning)";
+                popup.style.color = isSigned ? "white" : "#333";
+                
+                if (isSigned) {
+                     popup.textContent = "¡Éxito! Archivo subido y firmado (Dev).";
+                } else {
+                     // Mensaje para Prod
+                     popup.textContent = file.message || "Archivo subido. Revise su correo para aprobar.";
+                }
+                
+                popup.style.display = 'block';
+                setTimeout(() => popup.style.display = 'none', 4000);
+
+                // Recargar tabla
+                tableBody.innerHTML = '';
+                loadFiles();
+
+                form.reset();
+                fileNameDisplay.textContent = '';
+
+            } catch (error) {
+                console.error(error);
+                popup.style.backgroundColor = "var(--color-accent)";
+                popup.style.color = "white";
+                popup.textContent = "Error: " + error.message;
+                popup.style.display = 'block';
+                setTimeout(() => popup.style.display = 'none', 3000);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "SUBIR Y PROCESAR";
+            }
+        });
+    </script>
+</body>
+</html>
