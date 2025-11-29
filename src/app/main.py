@@ -36,4 +36,14 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=HOME_HOST, debug=True)
+    # Ejecutar con waitress en producción: establecer PRODUCTION=1 en el entorno
+    prod = os.environ.get("PRODUCTION", "0").lower() in ("1", "true", "yes")
+    if prod:
+        try:
+            from waitress import serve
+        except Exception:
+            print("Waitress no está instalado. Instálalo con: python -m pip install waitress")
+            raise
+        serve(app, host="0.0.0.0", port=int(HOME_HOST))
+    else:
+        app.run(host="0.0.0.0", port=int(HOME_HOST), debug=True)
